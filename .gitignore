@@ -1,0 +1,54 @@
+# Python 缓存与本地环境
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+.coverage.*
+htmlcov/
+.venv/
+venv/
+env/
+ENV/
+
+# 构建产物
+build/
+dist/
+.eggs/
+*.egg-info/
+*.whl
+
+# 安装/测试/运行状态
+.state/
+.test-state/
+.test-state-mock/
+test-state-mock/
+kubedeploy-lifecycle-*/
+tmprez*/
+.kube/
+kubeconfig
+*.kubeconfig
+admin.conf
+*.log
+
+# 编辑器与操作系统
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# 密钥、证书与临时文件
+.env
+.env.*
+*.key
+*.pem
+*.crt
+*.bak
+*.tmp
+*.retry

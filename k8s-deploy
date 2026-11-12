@@ -1,0 +1,77 @@
+#!/bin/sh
+# KubeDeploy launcher: find Python 3.8+, or bootstrap a portable runtime on Linux.
+set -eu
+SCRIPT="$0"
+while [ -L "$SCRIPT" ]; do
+    BASE=$(CDPATH= cd -- "$(dirname -- "$SCRIPT")" && pwd)
+    SCRIPT=$(readlink "$SCRIPT")
+    case "$SCRIPT" in
+        /*) ;;
+        *) SCRIPT="$BASE/$SCRIPT" ;;
+    esac
+done
+SELF_DIR=$(CDPATH= cd -- "$(dirname -- "$SCRIPT")" && pwd)
+ENTRY="$SELF_DIR/k8s-deploy.py"
+
+is_python_ok() {
+    "$1" -c 'import sys; raise SystemExit(0 if sys.version_info >= (3, 8) else 1)' >/dev/null 2>&1
+}
+
+PY=""
+for candidate in "${KUBEDEPLOY_PYTHON:-}" python3 python3.13 python3.12 python3.11 python3.10 python3.9 python3.8; do
+    [ -n "$candidate" ] || continue
+    if command -v "$candidate" >/dev/null 2>&1; then
+        p=$(command -v "$candidate")
+        if is_python_ok "$p"; then PY="$p"; break; fi
+    fi
+done
+
+if [ -z "$PY" ]; then
+    OS=$(uname -s 2>/dev/null || echo unknown)
+    ARCH=$(uname -m 2>/dev/null || echo unknown)
+    if [ "$OS" != "Linux" ]; then
+        echo "错误：未找到 Python 3.8+。macOS 请先安装 python3（brew install python），再重试。" >&2
+        exit 1
+    fi
+    case "$ARCH" in
+        x86_64|amd64) PARCH=amd64; SHA="8b50a442b04724a24c1eebb65a36a0c0e833d35374dbdf9c9470d8a97b164cd9";;
+        aarch64|arm64) PARCH=arm64; SHA="803e49259280af0f5466d32829cd9d65a302b0226e424b3f0b261f9daf6aee8f";;
+        *) echo "错误：不支持的架构 $ARCH" >&2; exit 1;;
+    esac
+    CACHE="${XDG_CACHE_HOME:-${HOME:-/tmp}/.cache}/kubedeploy"
+    PYDIR="$CACHE/python311"
+    if [ ! -x "$PYDIR/bin/python3" ] || ! is_python_ok "$PYDIR/bin/python3"; then
+        if ! command -v curl >/dev/null 2>&1 && ! command -v wget >/dev/null 2>&1; then
+            echo "错误：缺少 curl/wget，且未找到 Python 3.8+。请安装 Python 3.8+ 或 curl。" >&2
+            exit 1
+        fi
+        if [ "$PARCH" = "amd64" ]; then
+            ASSET="cpython-3.11.10%2B20241016-x86_64-unknown-linux-gnu-install_only.tar.gz"
+        else
+            ASSET="cpython-3.11.10%2B20241016-aarch64-unknown-linux-gnu-install_only.tar.gz"
+        fi
+        mkdir -p "$CACHE"
+        TMP="$CACHE/python.tar.gz"
+        URLS="https://files.m.daocloud.io/github.com/astral-sh/python-build-standalone/releases/download/20241016/$ASSET https://github.com/astral-sh/python-build-standalone/releases/download/20241016/$ASSET"
+        OK=0
+        for U in $URLS; do
+            if command -v curl >/dev/null 2>&1; then
+                DL_OK=0
+                curl -fL --retry 3 --connect-timeout 20 -o "$TMP" "$U" || DL_OK=$?
+            else
+                DL_OK=0
+                wget -q -T 30 -O "$TMP" "$U" || DL_OK=$?
+            fi
+            if [ "$DL_OK" -eq 0 ]; then
+                if echo "$SHA  $TMP" | sha256sum -c - >/dev/null 2>&1; then OK=1; break; fi
+            fi
+        done
+        [ "$OK" -eq 1 ] || { echo "错误：无法下载便携 Python，请预装 Python 3.8+。" >&2; exit 1; }
+        rm -rf "$PYDIR.new"; mkdir -p "$PYDIR.new"
+        tar -xzf "$TMP" -C "$PYDIR.new" --strip-components=1
+        rm -rf "$PYDIR"; mv "$PYDIR.new" "$PYDIR"
+    fi
+    PY="$PYDIR/bin/python3"
+fi
+
+exec "$PY" "$ENTRY" "$@"

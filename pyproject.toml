@@ -1,0 +1,18 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "kubedeploy"
+version = "1.2.8"
+description = "Enterprise Kubernetes installer for Kubernetes 1.28-1.37 with China mirrors"
+requires-python = ">=3.8"
+authors = [{name = "KubeDeploy"}]
+license = {text = "Apache-2.0"}
+dependencies = []
+
+[project.scripts]
+kubedeploy = "kubedeploy.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["kubedeploy*"]
