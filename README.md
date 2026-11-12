@@ -1,6 +1,6 @@
 # KubeDeploy Enterprise
 
-企业级 Kubernetes 一键部署工具，覆盖 **Kubernetes v1.28 – v1.37**，面向国内网络环境，默认使用阿里云等国内镜像。支持 **amd64/x86_64** 与 **arm64/aarch64**，可用于**物理服务器、VMware/KVM/OpenStack 虚拟机和公有云主机**；通过静态 containerd + kubeadm 软件包实现跨发行版部署。
+Kubernetes 一键部署工具，覆盖 **Kubernetes v1.28 – v1.37**，面向国内网络环境，默认使用阿里云等国内镜像。支持 **amd64/x86_64** 与 **arm64/aarch64**，可用于**物理服务器、VMware/KVM/OpenStack 虚拟机和公有云主机**；通过静态 containerd + kubeadm 软件包实现跨发行版部署。
 
 > 当前版本：1.2.8  
 > 工具形态：单机 CLI + 远程 Python agent。CLI 可运行在 Linux/macOS/Windows；目标节点支持 systemd Linux。
